@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth';
+import { Router, Response } from 'express';
+import { authenticateToken, AuthRequest } from '../middleware/auth';
 import User from '../models/User';
 import POI from '../models/POI';
 import PendingModification from '../models/PendingModification';
@@ -7,9 +7,9 @@ import PendingModification from '../models/PendingModification';
 const router = Router();
 
 // Delete user account
-router.delete('/delete-account', authenticateToken, async (req, res) => {
+router.delete('/delete-account', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.userId;
 
     if (!userId) {
       return res.status(401).json({ message: 'Non autorisé' });

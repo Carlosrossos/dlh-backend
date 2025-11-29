@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import User from '../models/User';
+import User, { IUser } from '../models/User';
 import { AuthRequest } from '../middleware/auth';
 import { sendPasswordResetEmail } from '../services/emailService';
 
@@ -77,16 +77,16 @@ export const signup = async (req: Request, res: Response) => {
       password,
       name: name || email.split('@')[0],
       role: 'user',
-    });
+    }) as IUser;
 
     // Generate token
-    const token = generateToken(newUser._id.toString());
+    const token = generateToken((newUser._id as string).toString());
 
     res.status(201).json({
       message: 'User created successfully',
       token,
       user: {
-        id: newUser._id.toString(),
+        id: (newUser._id as string).toString(),
         email: newUser.email,
         name: newUser.name,
         role: newUser.role,
@@ -120,13 +120,13 @@ export const signin = async (req: Request, res: Response) => {
     }
 
     // Generate token
-    const token = generateToken(user._id.toString());
+    const token = generateToken((user._id as string).toString());
 
     res.json({
       message: 'Signed in successfully',
       token,
       user: {
-        id: user._id.toString(),
+        id: (user._id as string).toString(),
         email: user.email,
         name: user.name,
         role: user.role,
@@ -241,7 +241,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
 
     res.json({ 
       user: {
-        id: user._id.toString(),
+        id: (user._id as string).toString(),
         email: user.email,
         name: user.name,
         role: user.role,
