@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API - Dormir là-haut</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 { color: #d4a574; }
+        h2 { color: #8b7355; }
+        button {
+            background: #d4a574;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: 600;
+        }
+        button:hover { background: #e0b685; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #d4a574;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏔️ Test API - Dormir là-haut</h1>
+    
+    <div class="container">
+        <h2>📊 Statistiques</h2>
+        <button onclick="getStats()">Charger les statistiques</button>
+        <div id="stats"></div>
+    </div>
+
+    <div class="container">
+        <h2>📍 Liste des POIs</h2>
+        <button onclick="getAllPOIs()">Tous les POIs</button>
+        <button onclick="getPOIsByCategory('Refuge')">Refuges uniquement</button>
+        <button onclick="getPOIsByCategory('Cabane')">Cabanes uniquement</button>
+        <button onclick="getPOIsByMassif('Mont Blanc')">Mont Blanc</button>
+        <div id="pois-count"></div>
+        <pre id="pois-result"></pre>
+    </div>
+
+    <div class="container">
+        <h2>🔍 Détail d'un POI</h2>
+        <input type="text" id="poi-id" placeholder="ID du POI" style="padding: 8px; width: 300px; border: 1px solid #ddd; border-radius: 4px;">
+        <button onclick="getPOIById()">Charger</button>
+        <pre id="poi-detail"></pre>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+
+        async function getStats() {
+            try {
+                const response = await fetch(`${API_URL}/pois/stats`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    let html = '<div class="stats">';
+                    html += `<div class="stat-card"><div class="stat-value">${data.data.total}</div><div class="stat-label">Total POIs</div></div>`;
+                    
+                    data.data.byCategory.forEach(cat => {
+                        html += `<div class="stat-card"><div class="stat-value">${cat.count}</div><div class="stat-label">${cat._id}</div></div>`;
+                    });
+                    html += '</div>';
+                    
+                    html += '<h3 style="margin-top: 20px;">Par massif:</h3><div class="stats">';
+                    data.data.byMassif.forEach(massif => {
+                        html += `<div class="stat-card"><div class="stat-value">${massif.count}</div><div class="stat-label">${massif._id}</div></div>`;
+                    });
+                    html += '</div>';
+                    
+                    document.getElementById('stats').innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('stats').innerHTML = '<p style="color: red;">Erreur: ' + error.message + '</p>';
+            }
+        }
+
+        async function getAllPOIs() {
+            try {
+                const response = await fetch(`${API_URL}/pois`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('pois-count').innerHTML = `<p><strong>${data.count} POIs trouvés</strong></p>`;
+                    document.getElementById('pois-result').textContent = JSON.stringify(data.data.slice(0, 5), null, 2) + '\n\n... (5 premiers résultats)';
+                    
+                    // Save first ID for testing
+                    if (data.data.length > 0) {
+                        document.getElementById('poi-id').value = data.data[0]._id;
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('pois-result').textContent = 'Erreur: ' + error.message;
+            }
+        }
+
+        async function getPOIsByCategory(category) {
+            try {
+                const response = await fetch(`${API_URL}/pois?category=${category}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('pois-count').innerHTML = `<p><strong>${data.count} ${category}s trouvés</strong></p>`;
+                    document.getElementById('pois-result').textContent = JSON.stringify(data.data.slice(0, 5), null, 2) + '\n\n... (5 premiers résultats)';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('pois-result').textContent = 'Erreur: ' + error.message;
+            }
+        }
+
+        async function getPOIsByMassif(massif) {
+            try {
+                const response = await fetch(`${API_URL}/pois?massif=${encodeURIComponent(massif)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('pois-count').innerHTML = `<p><strong>${data.count} POIs dans le ${massif}</strong></p>`;
+                    document.getElementById('pois-result').textContent = JSON.stringify(data.data.slice(0, 5), null, 2) + '\n\n... (5 premiers résultats)';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('pois-result').textContent = 'Erreur: ' + error.message;
+            }
+        }
+
+        async function getPOIById() {
+            const poiId = document.getElementById('poi-id').value;
+            if (!poiId) {
+                alert('Veuillez entrer un ID de POI');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/pois/${poiId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('poi-detail').textContent = JSON.stringify(data.data, null, 2);
+                } else {
+                    document.getElementById('poi-detail').textContent = 'Erreur: ' + data.error;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('poi-detail').textContent = 'Erreur: ' + error.message;
+            }
+        }
+
+        // Load stats on page load
+        window.onload = () => {
+            getStats();
+        };
+    </script>
+</body>
+</html>
