@@ -59,7 +59,9 @@ app.get('/api/status', (req: Request, res: Response) => {
 });
 
 // Auth routes
+console.log('📌 Registering auth routes...');
 app.use('/api/auth', authRoutes);
+console.log('✅ Auth routes registered');
 
 // POI routes
 app.use('/api/pois', poiRoutes);
