@@ -38,6 +38,10 @@ app.use(express.json({ limit: '10mb' })); // Limit body size
 app.use(generalLimiter);
 
 // Routes
+app.get('/', (_req: Request, res: Response) => {
+  res.json({ message: '🏔️ Dormir Là-Haut API', status: 'running' });
+});
+
 app.get('/api/hello', (req: Request, res: Response) => {
   res.json({ message: 'Hello from the backend!' });
 });

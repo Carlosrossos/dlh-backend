@@ -7,6 +7,9 @@ export interface IUser extends Document {
   password: string;
   role: 'user' | 'admin';
   bookmarks: mongoose.Types.ObjectId[];
+  isVerified: boolean;
+  verificationToken?: string;
+  verificationTokenExpires?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   createdAt: Date;
@@ -46,6 +49,18 @@ const UserSchema = new Schema<IUser>(
       type: Schema.Types.ObjectId,
       ref: 'POI',
     }],
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+      select: false,
+    },
+    verificationTokenExpires: {
+      type: Date,
+      select: false,
+    },
     resetPasswordToken: {
       type: String,
       select: false,

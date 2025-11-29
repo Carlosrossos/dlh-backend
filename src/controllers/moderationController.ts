@@ -3,6 +3,7 @@ import PendingModification from '../models/PendingModification';
 import POI from '../models/POI';
 import { AuthRequest } from '../middleware/auth';
 import User from '../models/User';
+import { sendModificationApprovedEmail, sendModificationRejectedEmail } from '../services/emailService';
 
 // GET /api/admin/user/contributions - Get user's contributions
 export const getUserContributions = async (req: AuthRequest, res: Response) => {
@@ -152,6 +153,19 @@ export const approveModification = async (req: AuthRequest, res: Response) => {
     modification.reviewedAt = new Date();
     await modification.save();
 
+    // Send email notification to user
+    const user = await User.findById(modification.userId);
+    if (user) {
+      const poi = modification.poiId ? await POI.findById(modification.poiId) : null;
+      await sendModificationApprovedEmail(
+        user.email,
+        user.name,
+        modification.type,
+        poi?.name
+      );
+      console.log(`📧 Email de confirmation envoyé à ${user.email}`);
+    }
+
     res.json({
       success: true,
       message: 'Modification approuvée avec succès',
@@ -196,6 +210,20 @@ export const rejectModification = async (req: AuthRequest, res: Response) => {
     await modification.save();
 
     console.log(`❌ Modification rejetée: ${modification.type}`);
+
+    // Send email notification to user
+    const user = await User.findById(modification.userId);
+    if (user) {
+      const poi = modification.poiId ? await POI.findById(modification.poiId) : null;
+      await sendModificationRejectedEmail(
+        user.email,
+        user.name,
+        modification.type,
+        modification.rejectionReason || 'Non conforme',
+        poi?.name
+      );
+      console.log(`📧 Email de refus envoyé à ${user.email}`);
+    }
 
     res.json({
       success: true,
