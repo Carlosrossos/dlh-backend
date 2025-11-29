@@ -27,20 +27,8 @@ connectDB();
 
 // Middleware
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:", "http:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
-    },
-  },
-  crossOriginEmbedderPolicy: false, // Permet les ressources externes
+  contentSecurityPolicy: false, // Disable CSP for API (frontend handles its own CSP)
+  crossOriginEmbedderPolicy: false,
 })); // Secure HTTP headers
 app.use(compression()); // Enable gzip compression
 app.use(cors());
