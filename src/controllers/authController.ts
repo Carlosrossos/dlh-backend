@@ -56,10 +56,8 @@ const generateToken = (userId: string): string => {
 };
 
 export const signup = async (req: Request, res: Response) => {
-  console.log('📝 Signup attempt received');
   try {
     const { email, password, name } = req.body;
-    console.log('📝 Signup for:', email);
 
     // Validation
     if (!email || !password) {
@@ -92,19 +90,14 @@ export const signup = async (req: Request, res: Response) => {
     }) as IUser;
 
     // Send verification email
-    console.log('📧 Attempting to send verification email...');
     const emailSent = await sendVerificationEmail(
       email,
       verificationToken,
       newUser.name
     );
-    console.log('📧 Email send result:', emailSent);
 
     if (!emailSent) {
-      console.error(`❌ Failed to send verification email to: ${email}`);
-      // Continue anyway - user can request new verification email later
-    } else {
-      console.log(`✅ Verification email sent to: ${email}`);
+      console.warn(`Email verification non envoyé à: ${email}`);
     }
 
     res.status(201).json({
