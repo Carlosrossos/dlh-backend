@@ -4,11 +4,14 @@ import nodemailer from 'nodemailer';
 const createTransporter = async () => {
   // Si SMTP configuré, utiliser la config
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    console.log('📧 Using configured SMTP:', process.env.SMTP_HOST);
+    const port = parseInt(process.env.SMTP_PORT || '465');
+    const secure = port === 465 ? true : process.env.SMTP_SECURE === 'true';
+    
+    console.log(`📧 Using configured SMTP: ${process.env.SMTP_HOST}:${port} (secure: ${secure})`);
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
+      port,
+      secure,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
