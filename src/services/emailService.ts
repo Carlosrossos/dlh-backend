@@ -1,62 +1,8 @@
-import nodemailer from 'nodemailer';
+import * as brevo from '@getbrevo/brevo';
 
-// Configuration du transporteur email
-const createTransporter = async () => {
-  // Si SMTP configuré, utiliser la config
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    const port = parseInt(process.env.SMTP_PORT || '465');
-    const secure = port === 465 ? true : process.env.SMTP_SECURE === 'true';
-    
-    console.log(`📧 Using configured SMTP: ${process.env.SMTP_HOST}:${port} (secure: ${secure})`);
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port,
-      secure,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-  }
-
-  // Sinon, utiliser Ethereal (fake SMTP pour tests)
-  console.log('📧 No SMTP configured, using Ethereal test account...');
-  const testAccount = await nodemailer.createTestAccount();
-  console.log('📧 Ethereal test account created:', testAccount.user);
-  
-  return nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
-  });
-};
-
-// Cache du transporteur
-let cachedTransporter: nodemailer.Transporter | null = null;
-
-const getTransporter = async () => {
-  if (!cachedTransporter) {
-    cachedTransporter = await createTransporter();
-  }
-  return cachedTransporter;
-};
-
-// Créer un compte Ethereal pour les tests (une seule fois)
-export const createTestAccount = async () => {
-  try {
-    const testAccount = await nodemailer.createTestAccount();
-    console.log('📧 Compte email de test créé:');
-    console.log('   User:', testAccount.user);
-    console.log('   Pass:', testAccount.pass);
-    return testAccount;
-  } catch (error) {
-    console.error('Erreur création compte test:', error);
-    return null;
-  }
-};
+// Configuration de l'API Brevo
+const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
 interface EmailOptions {
   to: string;
@@ -66,40 +12,38 @@ interface EmailOptions {
 }
 
 export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
+  // Si pas de clé API Brevo, mode test (pas d'envoi)
+  if (!process.env.BREVO_API_KEY) {
+    console.log('📧 [TEST MODE] Pas de BREVO_API_KEY configurée');
+    console.log('   To:', options.to);
+    console.log('   Subject:', options.subject);
+    return true;
+  }
+
   try {
-    console.log('📧 Préparation envoi email à:', options.to);
-    const transporter = await getTransporter();
+    console.log('📧 Préparation envoi email via Brevo API à:', options.to);
 
-    const fromEmail = process.env.EMAIL_FROM || '"Dormir Là-Haut" <noreply@dormir-la-haut.fr>';
-    console.log('📧 From:', fromEmail);
+    const senderEmail = process.env.EMAIL_FROM_ADDRESS || 'noreply@dormir-la-haut.fr';
+    const senderName = process.env.EMAIL_FROM_NAME || 'Dormir Là-Haut';
+    
+    console.log('📧 From:', senderName, '<' + senderEmail + '>');
 
-    const mailOptions = {
-      from: fromEmail,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text || options.html.replace(/<[^>]*>/g, ''),
-    };
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.sender = { name: senderName, email: senderEmail };
+    sendSmtpEmail.to = [{ email: options.to }];
+    sendSmtpEmail.subject = options.subject;
+    sendSmtpEmail.htmlContent = options.html;
+    sendSmtpEmail.textContent = options.text || options.html.replace(/<[^>]*>/g, '');
 
-    console.log('📧 Envoi en cours...');
-    const info = await transporter.sendMail(mailOptions);
-    console.log('📧 Réponse SMTP:', JSON.stringify(info));
-
-    // Afficher le lien de prévisualisation si c'est Ethereal
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    if (previewUrl) {
-      console.log('📧 Email envoyé (test mode)');
-      console.log('   📬 Preview URL:', previewUrl);
-    } else {
-      console.log('📧 Email envoyé avec succès à:', options.to);
-    }
+    console.log('📧 Envoi en cours via API HTTP...');
+    const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log('📧 Email envoyé avec succès! MessageId:', result.body.messageId);
 
     return true;
   } catch (error: any) {
-    console.error('❌ Erreur envoi email:');
+    console.error('❌ Erreur envoi email Brevo:');
     console.error('   Message:', error?.message);
-    console.error('   Code:', error?.code);
-    console.error('   Response:', error?.response);
+    console.error('   Body:', JSON.stringify(error?.body));
     console.error('   Full error:', error);
     return false;
   }
