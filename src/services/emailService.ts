@@ -67,17 +67,23 @@ interface EmailOptions {
 
 export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
   try {
+    console.log('📧 Préparation envoi email à:', options.to);
     const transporter = await getTransporter();
 
+    const fromEmail = process.env.EMAIL_FROM || '"Dormir Là-Haut" <noreply@dormir-la-haut.fr>';
+    console.log('📧 From:', fromEmail);
+
     const mailOptions = {
-      from: process.env.EMAIL_FROM || '"Dormir Là-Haut" <noreply@dormir-la-haut.fr>',
+      from: fromEmail,
       to: options.to,
       subject: options.subject,
       html: options.html,
       text: options.text || options.html.replace(/<[^>]*>/g, ''),
     };
 
+    console.log('📧 Envoi en cours...');
     const info = await transporter.sendMail(mailOptions);
+    console.log('📧 Réponse SMTP:', JSON.stringify(info));
 
     // Afficher le lien de prévisualisation si c'est Ethereal
     const previewUrl = nodemailer.getTestMessageUrl(info);
@@ -85,12 +91,16 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
       console.log('📧 Email envoyé (test mode)');
       console.log('   📬 Preview URL:', previewUrl);
     } else {
-      console.log('📧 Email envoyé à:', options.to);
+      console.log('📧 Email envoyé avec succès à:', options.to);
     }
 
     return true;
-  } catch (error) {
-    console.error('Erreur envoi email:', error);
+  } catch (error: any) {
+    console.error('❌ Erreur envoi email:');
+    console.error('   Message:', error?.message);
+    console.error('   Code:', error?.code);
+    console.error('   Response:', error?.response);
+    console.error('   Full error:', error);
     return false;
   }
 };
