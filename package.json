@@ -28,15 +28,13 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.2.0",
     "express-validator": "^7.3.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.0",
     "multer": "^2.0.2",
-    "nodemailer": "^7.0.11",
-    "xss-clean": "^0.1.4"
+    "nodemailer": "^7.0.11"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
