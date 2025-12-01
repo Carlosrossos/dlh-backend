@@ -71,4 +71,23 @@ app.use('/api/test', testRoutes);
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+  
+  // Keep-alive ping pour éviter le cold start sur Render (free tier)
+  const BACKEND_URL = process.env.BACKEND_URL;
+  if (BACKEND_URL && process.env.NODE_ENV === 'production') {
+    const PING_INTERVAL = 14 * 60 * 1000; // 14 minutes
+    
+    setInterval(async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/status`);
+        if (response.ok) {
+          console.log(`🏓 Keep-alive ping successful at ${new Date().toISOString()}`);
+        }
+      } catch (error) {
+        console.log(`⚠️ Keep-alive ping failed:`, error);
+      }
+    }, PING_INTERVAL);
+    
+    console.log(`🔄 Keep-alive ping enabled (every 14 min) for ${BACKEND_URL}`);
+  }
 });
