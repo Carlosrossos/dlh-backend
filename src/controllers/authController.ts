@@ -7,49 +7,6 @@ import { sendPasswordResetEmail, sendVerificationEmail } from '../services/email
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-// Initialize with demo users (for testing)
-const initDemoUsers = async () => {
-  try {
-    const demoExists = await User.findOne({ email: 'demo@example.com' });
-    
-    if (!demoExists) {
-      await User.create([
-        {
-          email: 'demo@example.com',
-          password: 'demo123',
-          name: 'Demo User',
-          role: 'user',
-          isVerified: true, // Demo users are pre-verified
-        },
-        {
-          email: 'john@example.com',
-          password: 'demo123',
-          name: 'John Doe',
-          role: 'user',
-          isVerified: true,
-        },
-        {
-          email: 'admin@example.com',
-          password: 'demo123',
-          name: 'Admin User',
-          role: 'admin',
-          isVerified: true,
-        }
-      ]);
-      
-      console.log('📝 Demo users initialized in MongoDB');
-      console.log('   - demo@example.com (User)');
-      console.log('   - john@example.com (User)');
-      console.log('   - admin@example.com (Admin)');
-    }
-  } catch (error) {
-    console.error('Error initializing demo users:', error);
-  }
-};
-
-// Initialize demo users on module load
-initDemoUsers();
-
 // Helper to generate JWT
 const generateToken = (userId: string): string => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
