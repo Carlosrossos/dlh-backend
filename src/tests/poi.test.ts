@@ -105,7 +105,7 @@ describe('POI Routes', () => {
         .set('Authorization', `Bearer ${user.token}`)
         .send({
           name: 'New POI',
-          category: 'Spot',
+          category: 'Bivouac',
           massif: 'Écrins',
           coordinates: { lat: 44.9, lng: 6.4 },
           description: 'A new spot for testing creation.',
@@ -123,7 +123,7 @@ describe('POI Routes', () => {
         .post('/api/pois')
         .send({
           name: 'New POI',
-          category: 'Spot',
+          category: 'Bivouac',
           massif: 'Écrins',
           coordinates: { lat: 44.9, lng: 6.4 },
           description: 'A new spot.',

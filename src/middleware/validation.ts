@@ -51,7 +51,7 @@ export const createPOIValidation = [
     .withMessage('Le nom doit contenir entre 3 et 100 caractères')
     .escape(),
   body('category')
-    .isIn(['Spot', 'Cabane', 'Refuge'])
+    .isIn(['Bivouac', 'Cabane', 'Refuge'])
     .withMessage('Catégorie invalide'),
   body('massif')
     .isIn(['Mont Blanc', 'Vanoise', 'Écrins', 'Queyras', 'Mercantour', 'Vercors', 'Chartreuse', 'Bauges', 'Aravis', 'Belledonne'])

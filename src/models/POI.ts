@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type POICategory = 'Spot' | 'Cabane' | 'Refuge';
+export type POICategory = 'Bivouac' | 'Cabane' | 'Refuge';
 export type SunExposition = 'Nord' | 'Sud' | 'Est' | 'Ouest' | 'Nord-Est' | 'Nord-Ouest' | 'Sud-Est' | 'Sud-Ouest';
 export type Massif = 'Mont Blanc' | 'Vanoise' | 'Écrins' | 'Queyras' | 'Mercantour' | 'Vercors' | 'Chartreuse' | 'Bauges' | 'Aravis' | 'Belledonne';
 
@@ -70,7 +70,7 @@ const POISchema = new Schema<IPOI>(
     category: {
       type: String,
       required: [true, 'La catégorie est requise'],
-      enum: ['Spot', 'Cabane', 'Refuge'],
+      enum: ['Bivouac', 'Cabane', 'Refuge'],
     },
     massif: {
       type: String,

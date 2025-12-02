@@ -10,18 +10,34 @@ dotenv.config();
 
 // Fonction pour déterminer le massif à partir des coordonnées
 function getMassifFromCoordinates(lat: number, lng: number): string {
-  // Approximations basées sur les coordonnées des massifs
-  if (lat >= 45.8 && lng >= 6.8) return 'Mont Blanc';
-  if (lat >= 45.3 && lat < 45.5 && lng >= 6.6 && lng < 6.9) return 'Vanoise';
-  if (lat >= 44.8 && lat < 45.1 && lng >= 6.2 && lng < 6.5) return 'Écrins';
-  if (lat >= 44.6 && lat < 44.9 && lng >= 6.7 && lng < 7.0) return 'Queyras';
-  if (lat >= 44.0 && lat < 44.3 && lng >= 7.3 && lng < 7.5) return 'Mercantour';
-  if (lat >= 44.9 && lat < 45.2 && lng >= 5.4 && lng < 5.7) return 'Vercors';
-  if (lat >= 45.2 && lat < 45.5 && lng >= 5.7 && lng < 6.0) return 'Chartreuse';
-  if (lat >= 45.5 && lat < 45.8 && lng >= 6.1 && lng < 6.3) return 'Bauges';
-  if (lat >= 45.8 && lat < 46.0 && lng >= 6.4 && lng < 6.6) return 'Aravis';
-  if (lat >= 45.1 && lat < 45.4 && lng >= 5.9 && lng < 6.2) return 'Belledonne';
-  return 'Mont Blanc'; // Par défaut
+  // Zones élargies pour mieux couvrir les Alpes françaises
+  // Mercantour: Alpes-Maritimes (vérifier en premier car au sud)
+  if (lat >= 43.9 && lat <= 44.5 && lng >= 6.5 && lng <= 7.7) return 'Mercantour';
+  // Queyras: sud-est des Écrins
+  if (lat >= 44.4 && lat <= 44.9 && lng >= 6.6 && lng <= 7.2) return 'Queyras';
+  // Écrins: autour de la Barre des Écrins
+  if (lat >= 44.6 && lat <= 45.15 && lng >= 5.9 && lng <= 6.65) return 'Écrins';
+  // Vercors: plateau du Vercors
+  if (lat >= 44.7 && lat <= 45.3 && lng >= 5.2 && lng <= 5.75) return 'Vercors';
+  // Chartreuse: entre Grenoble et Chambéry
+  if (lat >= 45.2 && lat <= 45.55 && lng >= 5.7 && lng <= 6.0) return 'Chartreuse';
+  // Belledonne: chaîne est de Grenoble
+  if (lat >= 45.0 && lat <= 45.5 && lng >= 5.85 && lng <= 6.25) return 'Belledonne';
+  // Bauges: entre Chambéry et Annecy
+  if (lat >= 45.45 && lat <= 45.85 && lng >= 5.85 && lng <= 6.35) return 'Bauges';
+  // Vanoise: entre Bourg-Saint-Maurice et Modane
+  if (lat >= 45.15 && lat <= 45.6 && lng >= 6.4 && lng <= 7.15) return 'Vanoise';
+  // Aravis: entre Annecy et Mont Blanc
+  if (lat >= 45.75 && lat <= 46.1 && lng >= 6.25 && lng <= 6.75) return 'Aravis';
+  // Mont Blanc: haute Savoie, zone élargie (fallback pour le nord des Alpes)
+  if (lat >= 45.6 && lng >= 6.5) return 'Mont Blanc';
+  
+  // Fallback par zone géographique
+  if (lat < 44.5) return 'Mercantour';
+  if (lng < 5.8) return 'Vercors';
+  if (lat > 45.5) return 'Mont Blanc';
+  
+  return 'Écrins'; // Par défaut, zone centrale des Alpes
 }
 
 // Fonction pour déterminer l'exposition (aléatoire pour l'instant)
@@ -31,11 +47,11 @@ function getRandomExposition(): string {
 }
 
 // Fonction pour mapper le type vers la catégorie
-function mapCategory(type: string): 'Spot' | 'Cabane' | 'Refuge' {
+function mapCategory(type: string): 'Bivouac' | 'Cabane' | 'Refuge' {
   const typeLower = type.toLowerCase().trim();
   if (typeLower.includes('refuge')) return 'Refuge';
   if (typeLower.includes('cabane')) return 'Cabane';
-  return 'Spot';
+  return 'Bivouac';
 }
 
 async function importCSV() {
