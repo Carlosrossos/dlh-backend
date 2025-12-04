@@ -11,6 +11,7 @@
     "check:status": "ts-node src/scripts/checkPOIStatus.ts",
     "import": "ts-node src/scripts/importCSV.ts",
     "import:clear": "ts-node src/scripts/importCSV.ts --clear",
+    "update-massifs": "ts-node src/scripts/updateMassifs.ts",
     "remove-expositions": "ts-node src/scripts/removeExpositions.ts",
     "test": "vitest run",
     "test:watch": "vitest",

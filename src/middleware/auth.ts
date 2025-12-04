@@ -13,14 +13,30 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
   if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Token d\'authentification requis',
+      code: 'TOKEN_MISSING'
+    });
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     req.userId = decoded.userId;
     next();
-  } catch (error) {
-    return res.status(403).json({ error: 'Invalid or expired token' });
+  } catch (error: any) {
+    // Check if token is expired
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Votre session a expiré. Veuillez vous reconnecter.',
+        code: 'TOKEN_EXPIRED'
+      });
+    }
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Token invalide. Veuillez vous reconnecter.',
+      code: 'TOKEN_INVALID'
+    });
   }
 };

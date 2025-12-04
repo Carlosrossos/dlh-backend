@@ -8,8 +8,30 @@ import User from '../models/User';
 // Load environment variables
 dotenv.config();
 
+// Calcul de distance en km entre deux points GPS (formule Haversine)
+function getDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371; // Rayon de la Terre en km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Coordonnées du sommet du Mont Blanc
+const MONT_BLANC = { lat: 45.8326, lng: 6.8652 };
+const MONT_BLANC_RADIUS_KM = 10;
+
 // Fonction pour déterminer le massif à partir des coordonnées
 function getMassifFromCoordinates(lat: number, lng: number): string {
+  // Mont Blanc: rayon de 10km autour du sommet (vérifier en premier)
+  if (getDistanceKm(lat, lng, MONT_BLANC.lat, MONT_BLANC.lng) <= MONT_BLANC_RADIUS_KM) {
+    return 'Mont Blanc';
+  }
+  
   // Zones élargies pour mieux couvrir les Alpes françaises
   // Mercantour: Alpes-Maritimes (vérifier en premier car au sud)
   if (lat >= 43.9 && lat <= 44.5 && lng >= 6.5 && lng <= 7.7) return 'Mercantour';
@@ -29,13 +51,11 @@ function getMassifFromCoordinates(lat: number, lng: number): string {
   if (lat >= 45.15 && lat <= 45.6 && lng >= 6.4 && lng <= 7.15) return 'Vanoise';
   // Aravis: entre Annecy et Mont Blanc
   if (lat >= 45.75 && lat <= 46.1 && lng >= 6.25 && lng <= 6.75) return 'Aravis';
-  // Mont Blanc: haute Savoie, zone élargie (fallback pour le nord des Alpes)
-  if (lat >= 45.6 && lng >= 6.5) return 'Mont Blanc';
   
   // Fallback par zone géographique
   if (lat < 44.5) return 'Mercantour';
   if (lng < 5.8) return 'Vercors';
-  if (lat > 45.5) return 'Mont Blanc';
+  if (lat > 45.5) return 'Aravis'; // Zone nord hors Mont Blanc -> Aravis
   
   return 'Écrins'; // Par défaut, zone centrale des Alpes
 }

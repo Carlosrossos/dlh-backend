@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import User, { IUser } from '../models/User';
 import { AuthRequest } from '../middleware/auth';
 import { sendPasswordResetEmail, sendVerificationEmail } from '../services/emailService';
+import cloudinary from '../config/cloudinary';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -222,12 +223,132 @@ export const getMe = async (req: AuthRequest, res: Response) => {
         id: (user._id as string).toString(),
         email: user.email,
         name: user.name,
+        avatar: user.avatar,
         role: user.role,
       }
     });
   } catch (error) {
     console.error('GetMe error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const updateProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { name, avatar } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Validate name if provided
+    if (name !== undefined) {
+      if (typeof name !== 'string' || name.trim().length < 2) {
+        return res.status(400).json({ error: 'Le nom doit contenir au moins 2 caractères' });
+      }
+      if (name.trim().length > 50) {
+        return res.status(400).json({ error: 'Le nom ne peut pas dépasser 50 caractères' });
+      }
+      user.name = name.trim();
+    }
+
+    // Validate avatar URL if provided
+    if (avatar !== undefined) {
+      if (avatar && typeof avatar === 'string' && avatar.length > 0) {
+        // Basic URL validation
+        try {
+          new URL(avatar);
+          user.avatar = avatar;
+        } catch {
+          return res.status(400).json({ error: 'URL d\'avatar invalide' });
+        }
+      } else {
+        user.avatar = undefined; // Allow removing avatar
+      }
+    }
+
+    await user.save({ validateBeforeSave: false });
+
+    console.log(`Profile updated for user: ${user.email}`);
+
+    res.json({
+      message: 'Profil mis à jour avec succès',
+      user: {
+        id: (user._id as string).toString(),
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+export const uploadAvatar = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentification requise' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier fourni' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Upload to Cloudinary
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'dormir-la-haut/avatars',
+        resource_type: 'image',
+        transformation: [
+          { width: 200, height: 200, crop: 'fill', gravity: 'face' },
+          { quality: 'auto:good' },
+          { fetch_format: 'auto' },
+        ],
+      },
+      async (error, result) => {
+        if (error) {
+          console.error('Cloudinary avatar upload error:', error);
+          return res.status(500).json({ error: 'Erreur lors de l\'upload de l\'image' });
+        }
+
+        if (!result) {
+          return res.status(500).json({ error: 'Erreur lors de l\'upload' });
+        }
+
+        // Update user avatar
+        user.avatar = result.secure_url;
+        await user.save({ validateBeforeSave: false });
+
+        console.log(`Avatar uploaded for user: ${user.email}`);
+
+        res.json({
+          message: 'Avatar mis à jour avec succès',
+          user: {
+            id: (user._id as string).toString(),
+            email: user.email,
+            name: user.name,
+            avatar: user.avatar,
+            role: user.role,
+          },
+        });
+      }
+    );
+
+    // Pipe the file buffer to Cloudinary
+    uploadStream.end(req.file.buffer);
+  } catch (error) {
+    console.error('Upload avatar error:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 

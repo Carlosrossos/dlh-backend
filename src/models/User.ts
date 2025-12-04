@@ -5,6 +5,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  avatar?: string;
   role: 'user' | 'admin';
   bookmarks: mongoose.Types.ObjectId[];
   isVerified: boolean;
@@ -39,6 +40,10 @@ const UserSchema = new Schema<IUser>(
       required: [true, 'Le mot de passe est requis'],
       minlength: [6, 'Le mot de passe doit contenir au moins 6 caractères'],
       select: false, // Ne pas retourner le password par défaut
+    },
+    avatar: {
+      type: String,
+      default: null,
     },
     role: {
       type: String,
