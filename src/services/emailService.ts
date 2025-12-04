@@ -14,19 +14,12 @@ interface EmailOptions {
 export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
   // Si pas de clé API Brevo, mode test (pas d'envoi)
   if (!process.env.BREVO_API_KEY) {
-    console.log('📧 [TEST MODE] Pas de BREVO_API_KEY configurée');
-    console.log('   To:', options.to);
-    console.log('   Subject:', options.subject);
     return true;
   }
 
   try {
-    console.log('📧 Préparation envoi email via Brevo API à:', options.to);
-
     const senderEmail = process.env.EMAIL_FROM_ADDRESS || 'noreply@dormir-la-haut.fr';
     const senderName = process.env.EMAIL_FROM_NAME || 'Dormir Là-Haut';
-    
-    console.log('📧 From:', senderName, '<' + senderEmail + '>');
 
     const sendSmtpEmail = new brevo.SendSmtpEmail();
     sendSmtpEmail.sender = { name: senderName, email: senderEmail };
@@ -35,16 +28,10 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
     sendSmtpEmail.htmlContent = options.html;
     sendSmtpEmail.textContent = options.text || options.html.replace(/<[^>]*>/g, '');
 
-    console.log('📧 Envoi en cours via API HTTP...');
-    const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log('📧 Email envoyé avec succès! MessageId:', result.body.messageId);
-
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
     return true;
   } catch (error: any) {
-    console.error('❌ Erreur envoi email Brevo:');
-    console.error('   Message:', error?.message);
-    console.error('   Body:', JSON.stringify(error?.body));
-    console.error('   Full error:', error);
+    console.error('Email error:', error?.message);
     return false;
   }
 };

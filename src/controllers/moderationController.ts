@@ -4,7 +4,6 @@ import POI from '../models/POI';
 import { AuthRequest } from '../middleware/auth';
 import User from '../models/User';
 import { sendModificationApprovedEmail, sendModificationRejectedEmail } from '../services/emailService';
-
 // GET /api/admin/user/contributions - Get user's contributions
 export const getUserContributions = async (req: AuthRequest, res: Response) => {
   try {
@@ -14,12 +13,10 @@ export const getUserContributions = async (req: AuthRequest, res: Response) => {
         error: 'Authentification requise',
       });
     }
-
     const contributions = await PendingModification.find({ userId: req.userId })
       .populate('poiId', 'name category')
       .sort({ createdAt: -1 })
       .lean();
-
     res.json({
       success: true,
       count: contributions.length,
@@ -33,23 +30,19 @@ export const getUserContributions = async (req: AuthRequest, res: Response) => {
     });
   }
 };
-
 // GET /api/admin/pending - Get all pending modifications
 export const getPendingModifications = async (req: Request, res: Response) => {
   try {
     const { type, status = 'pending' } = req.query;
-
     const filter: any = { status };
     if (type) {
       filter.type = type;
     }
-
     const modifications = await PendingModification.find(filter)
       .populate('userId', 'name email')
       .populate('poiId', 'name category')
       .sort({ createdAt: -1 })
       .lean();
-
     res.json({
       success: true,
       count: modifications.length,
@@ -63,14 +56,12 @@ export const getPendingModifications = async (req: Request, res: Response) => {
     });
   }
 };
-
 // POST /api/admin/pending/:id/approve - Approve a modification
 export const approveModification = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { selectedFields } = req.body; // Array of field names to approve
     const adminId = req.userId;
-
     const modification = await PendingModification.findById(id);
     if (!modification) {
       return res.status(404).json({
@@ -78,14 +69,12 @@ export const approveModification = async (req: AuthRequest, res: Response) => {
         error: 'Modification non trouvée',
       });
     }
-
     if (modification.status !== 'pending') {
       return res.status(400).json({
         success: false,
         error: 'Cette modification a déjà été traitée',
       });
     }
-
     // Apply modification based on type
     switch (modification.type) {
       case 'new_poi':
@@ -94,9 +83,7 @@ export const approveModification = async (req: AuthRequest, res: Response) => {
           ...modification.data,
           status: 'approved',
         });
-        console.log(`✅ Nouveau POI approuvé: ${newPOI.name}`);
         break;
-
       case 'comment':
         // Add comment to POI
         const poiForComment = await POI.findById(modification.poiId);
@@ -109,26 +96,21 @@ export const approveModification = async (req: AuthRequest, res: Response) => {
             date: new Date(),
           } as any);
           await poiForComment.save();
-          console.log(`✅ Commentaire approuvé pour: ${poiForComment.name}`);
         }
         break;
-
       case 'photo':
         // Add photo to POI
         const poiForPhoto = await POI.findById(modification.poiId);
         if (poiForPhoto) {
           poiForPhoto.photos.push(modification.data.photoUrl);
           await poiForPhoto.save();
-          console.log(`✅ Photo approuvée pour: ${poiForPhoto.name}`);
         }
         break;
-
       case 'edit_poi':
         // Update POI fields - only selected ones if provided
         const poiToEdit = await POI.findById(modification.poiId);
         if (poiToEdit) {
           let dataToApply = modification.data;
-          
           // If selectedFields is provided, filter the data
           if (selectedFields && Array.isArray(selectedFields) && selectedFields.length > 0) {
             dataToApply = {};
@@ -139,20 +121,16 @@ export const approveModification = async (req: AuthRequest, res: Response) => {
             });
             console.log(`✅ Approbation sélective: ${selectedFields.join(', ')}`);
           }
-          
           Object.assign(poiToEdit, dataToApply);
           await poiToEdit.save();
-          console.log(`✅ Modification approuvée pour: ${poiToEdit.name}`);
         }
         break;
     }
-
     // Mark modification as approved
     modification.status = 'approved';
     modification.reviewedBy = adminId as any;
     modification.reviewedAt = new Date();
     await modification.save();
-
     // Send email notification to user
     const user = await User.findById(modification.userId);
     if (user) {
@@ -163,9 +141,7 @@ export const approveModification = async (req: AuthRequest, res: Response) => {
         modification.type,
         poi?.name
       );
-      console.log(`📧 Email de confirmation envoyé à ${user.email}`);
     }
-
     res.json({
       success: true,
       message: 'Modification approuvée avec succès',
@@ -179,14 +155,12 @@ export const approveModification = async (req: AuthRequest, res: Response) => {
     });
   }
 };
-
 // POST /api/admin/pending/:id/reject - Reject a modification
 export const rejectModification = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
     const adminId = req.userId;
-
     const modification = await PendingModification.findById(id);
     if (!modification) {
       return res.status(404).json({
@@ -194,23 +168,18 @@ export const rejectModification = async (req: AuthRequest, res: Response) => {
         error: 'Modification non trouvée',
       });
     }
-
     if (modification.status !== 'pending') {
       return res.status(400).json({
         success: false,
         error: 'Cette modification a déjà été traitée',
       });
     }
-
     // Mark as rejected
     modification.status = 'rejected';
     modification.reviewedBy = adminId as any;
     modification.reviewedAt = new Date();
     modification.rejectionReason = reason || 'Non conforme';
     await modification.save();
-
-    console.log(`❌ Modification rejetée: ${modification.type}`);
-
     // Send email notification to user
     const user = await User.findById(modification.userId);
     if (user) {
@@ -222,9 +191,7 @@ export const rejectModification = async (req: AuthRequest, res: Response) => {
         modification.rejectionReason || 'Non conforme',
         poi?.name
       );
-      console.log(`📧 Email de refus envoyé à ${user.email}`);
     }
-
     res.json({
       success: true,
       message: 'Modification rejetée',
@@ -238,19 +205,16 @@ export const rejectModification = async (req: AuthRequest, res: Response) => {
     });
   }
 };
-
 // GET /api/admin/stats - Get moderation statistics
 export const getModerationStats = async (req: Request, res: Response) => {
   try {
     const pending = await PendingModification.countDocuments({ status: 'pending' });
     const approved = await PendingModification.countDocuments({ status: 'approved' });
     const rejected = await PendingModification.countDocuments({ status: 'rejected' });
-
     const byType = await PendingModification.aggregate([
       { $match: { status: 'pending' } },
       { $group: { _id: '$type', count: { $sum: 1 } } },
     ]);
-
     res.json({
       success: true,
       data: {
@@ -269,7 +233,6 @@ export const getModerationStats = async (req: Request, res: Response) => {
     });
   }
 };
-
 // DELETE /api/admin/pois/:poiId/comments/:commentId - Delete a comment from a POI
 export const deleteComment = async (req: AuthRequest, res: Response) => {
   try {
@@ -280,7 +243,6 @@ export const deleteComment = async (req: AuthRequest, res: Response) => {
         error: 'Authentification requise',
       });
     }
-
     const user = await User.findById(req.userId);
     if (!user || user.role !== 'admin') {
       return res.status(403).json({
@@ -288,9 +250,7 @@ export const deleteComment = async (req: AuthRequest, res: Response) => {
         error: 'Accès réservé aux administrateurs',
       });
     }
-
     const { poiId, commentId } = req.params;
-
     // Find the POI
     const poi = await POI.findById(poiId);
     if (!poi) {
@@ -299,25 +259,19 @@ export const deleteComment = async (req: AuthRequest, res: Response) => {
         error: 'POI non trouvé',
       });
     }
-
     // Find and remove the comment
     const commentIndex = poi.comments.findIndex(
       (c: any) => c.id === commentId || c._id?.toString() === commentId
     );
-
     if (commentIndex === -1) {
       return res.status(404).json({
         success: false,
         error: 'Commentaire non trouvé',
       });
     }
-
     const deletedComment = poi.comments[commentIndex];
     poi.comments.splice(commentIndex, 1);
     await poi.save();
-
-    console.log(`🗑️ Commentaire supprimé par admin: "${deletedComment.text}" du POI: ${poi.name}`);
-
     res.json({
       success: true,
       message: 'Commentaire supprimé avec succès',

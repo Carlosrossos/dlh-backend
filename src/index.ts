@@ -8,7 +8,6 @@ import authRoutes from './routes/authRoutes';
 import poiRoutes from './routes/poiRoutes';
 import adminRoutes from './routes/adminRoutes';
 import userRoutes from './routes/userRoutes';
-import testRoutes from './routes/testRoutes';
 import { generalLimiter } from './middleware/rateLimiter';
 
 // Import models to register them with Mongoose
@@ -64,9 +63,6 @@ app.use('/api/admin', adminRoutes);
 
 // User routes
 app.use('/api/user', userRoutes);
-
-// Test routes
-app.use('/api/test', testRoutes);
 
 // Start server
 app.listen(PORT, () => {
